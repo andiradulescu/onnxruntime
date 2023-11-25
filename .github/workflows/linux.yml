@@ -5,13 +5,14 @@ on:
       - main
       - rel-*
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  Onnxruntime-TVM:
+  Onnxruntime-ARM:
     runs-on: ubuntu-latest
     steps:
        - uses: actions/checkout@v4
@@ -21,12 +22,15 @@ jobs:
          with:
            python-version: '3.8.x'
            architecture: 'x64'
-       - name: 'Setup TVM EP requirements'
+       - name: 'Setup ARM ComputeLibrary requirements'
          run: |
-           set -e -x
-           sudo apt-get update
-           sudo apt-get install -y libtinfo-dev zlib1g-dev build-essential libedit-dev libxml2-dev nasm
-           python3 -m pip install -r ${{ github.workspace }}/tools/ci_build/github/linux/tvm/requirements.txt
+           wget https://github.com/ARM-software/ComputeLibrary/releases/download/v20.02/arm_compute-v20.02-bin-linux.tar.gz
+           tar xf arm_compute-v20.02-bin-linux.tar.gz
+       - name: 'Setup cmake'
+         run: |
+           python3 -m pip install cmake
        - name: 'Build and Test'
          run: |
-           python3 ${{ github.workspace }}/tools/ci_build/build.py --build_dir build --config Release --skip_submodule_sync --parallel --enable_pybind --disable_contrib_ops --disable_ml_ops --skip_onnx_tests --use_tvm --use_tvm_hash --ctest_path ""
+           export CPATH=./arm_compute-v20.02-bin-linux/include/:./arm_compute-v20.02-bin-linux/
+           export LD_LIBRARY_PATH=./arm_compute-v20.02-bin-linux/lib/linux-arm64-v8a-neon-cl/
+           python3 ${{ github.workspace }}/tools/ci_build/build.py --build_dir build --config Release --skip_submodule_sync --build_wheel --arm64 --use_acl ACL_2002 --skip_tests
