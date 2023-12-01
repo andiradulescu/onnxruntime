@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   Onnxruntime-TVM:
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: buildjet-8vcpu-ubuntu-2204-arm
     steps:
        - uses: actions/checkout@v4
          with:
@@ -29,4 +29,9 @@ jobs:
            python3 -m pip install -r ${{ github.workspace }}/tools/ci_build/github/linux/tvm/requirements.txt
        - name: 'Build and Test'
          run: |
-           python3 ${{ github.workspace }}/tools/ci_build/build.py --build_dir build --config Release --skip_submodule_sync --parallel --enable_pybind --disable_contrib_ops --disable_ml_ops --skip_onnx_tests --use_tvm --use_tvm_hash --ctest_path ""
+           python3 ${{ github.workspace }}/tools/ci_build/build.py --build_dir build --config Release --skip_submodule_sync --parallel --enable_pybind --build_wheel --skip_tests --skip_onnx_tests --use_tvm
+       - name: Upload dist
+         uses: actions/upload-artifact@v3
+         with:
+           name: wheels
+           path: dist
