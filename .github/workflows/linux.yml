@@ -5,6 +5,7 @@ on:
       - main
       - rel-*
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -12,15 +13,14 @@ concurrency:
 
 jobs:
   Onnxruntime-TVM:
-    runs-on: ubuntu-latest
+    runs-on: buildjet-4vcpu-ubuntu-2204
     steps:
        - uses: actions/checkout@v4
          with:
            submodules: true
-       - uses: actions/setup-python@v4
+       - uses: deadsnakes/action@v2.1.1
          with:
-           python-version: '3.8.x'
-           architecture: 'x64'
+           python-version: '3.8'
        - name: 'Setup TVM EP requirements'
          run: |
            set -e -x
