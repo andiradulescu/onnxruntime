@@ -16,7 +16,7 @@ jobs:
            submodules: true
        - uses: deadsnakes/action@v2.1.1
          with:
-           python-version: '3.8'
+           python-version: '3.11'
        - name: 'Setup TVM EP requirements'
          run: |
            set -e -x
