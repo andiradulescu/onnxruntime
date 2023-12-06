@@ -1,0 +1,57 @@
+name: Linux_CI_docker
+on:
+  # push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  Onnxruntime-TVM-docker:
+    runs-on: buildjet-8vcpu-ubuntu-2204-arm
+    container:
+       image: ubuntu:20.04
+    steps:
+       - name: Install Git
+         run: |
+           apt-get update
+           apt-get install -y git
+
+       - uses: actions/checkout@v4
+         with:
+           submodules: true
+
+       - name: Set up Python 3.11
+         run: |
+           export DEBIAN_FRONTEND=noninteractive
+           apt-get install -y software-properties-common tzdata curl
+           add-apt-repository ppa:deadsnakes/ppa
+           apt-get update
+           apt-get install -y python3.11 python3.11-dev
+           curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+           python3.11 get-pip.py
+
+       - name: 'Setup TVM EP requirements'
+         run: |
+           set -e -x
+           apt-get update
+           apt-get install -y libtinfo-dev zlib1g-dev build-essential libedit-dev libxml2-dev nasm
+           python3.11 -m pip install -r tools/ci_build/github/linux/tvm/requirements.txt
+           apt-get install -y lsb-release ca-certificates gpg wget
+           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+           apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+           apt-get update
+           apt-get install -y cmake
+           wget https://apt.llvm.org/llvm.sh
+           chmod +x llvm.sh
+           ./llvm.sh 13
+       - name: 'Build and Test'
+         run: |
+           python3.11 tools/ci_build/build.py --build_dir build --config Release --skip_submodule_sync --parallel --enable_pybind --build_wheel --skip_tests --skip_onnx_tests --use_tvm --allow_running_as_root
+       - uses: actions/upload-artifact@v3
+         with:
+           name: wheels
+           path: |
+             build/Release/dist/*.whl
+             build/Release/_deps/tvm-src/python/dist/*.whl
