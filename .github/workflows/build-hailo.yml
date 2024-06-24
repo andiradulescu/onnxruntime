@@ -1,6 +1,6 @@
 name: build-hailo
 on:
-  # push:
+  push:
   workflow_dispatch:
 
 concurrency:
@@ -19,7 +19,7 @@ jobs:
            python-version: '3.11'
        - name: 'Build'
          run: |
-           python3 ${{ github.workspace }}/build.sh --use_hailo --parallel --skip_tests --enable_pybind --build_wheel --config Release
+           ./build.sh --use_hailo --parallel --skip_tests --enable_pybind --build_wheel --config Release
        - uses: actions/upload-artifact@v3
          with:
            name: wheels
