@@ -1,0 +1,27 @@
+name: build-hailo
+on:
+  # push:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  onnxruntime-hailo:
+    runs-on: namespace-profile-arm64-4x16-2204-caching
+    steps:
+       - uses: actions/checkout@v4
+         with:
+           submodules: true
+       - uses: deadsnakes/action@v2.1.1
+         with:
+           python-version: '3.11'
+       - name: 'Build'
+         run: |
+           python3 ${{ github.workspace }}/build.sh --use_hailo --parallel --skip_tests --enable_pybind --build_wheel --config Release
+       - uses: actions/upload-artifact@v3
+         with:
+           name: wheels
+           path: |
+             build/Release/dist/*.whl
